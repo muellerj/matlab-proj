@@ -22,7 +22,6 @@ function make(option, varargin)
   end
 end
 
-function ppath = projectpath()
-  ppath = regexp(mfilename('fullpath'), '(.*)[\\\/]make', 'tokens');
-  ppath = ppath{1}{1};
+function x = projectpath()
+  x = char(regexp(mfilename('fullpath'), '(.*)[\\\/]make', 'tokens', 'once'));
 end
