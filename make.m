@@ -9,13 +9,14 @@ function make(option, varargin)
   % Add library paths
   addpath(genpath([projectpath '/lib']));
   addpath(genpath([projectpath '/spec']));
+  addpath(genpath([projectpath '/mdl']));
 
   if nargin < 1
     make('spec');
   else
     switch(option)
       case 'spec'
-        run_specs;
+        run_specs(varargin{:});
       otherwise
         error(['Unkown option ' option])
     end
