@@ -1,28 +1,24 @@
 function run_specs(varargin)
-%RUN_SPECS [FOLDER]
+%RUN_SPECS [SEARCHSTR]
 %
-%  Run all available specs located at FOLDER/*_spec.m and report results.
-%  If no FOLDER is specified, [projectpath]/spec/*_spec.m is assumed.
+%  Run all available specs matching [projectpath]/spec/**/*SEARCHSTR*_spec.m
 
   global ASSERTIONS;
   ASSERTIONS = {};
   EXCEPTIONS = {};
 
   if nargin > 0
-    specfiles = [];
-    for didx = 1:numel(varargin)
-      specfiles = [specfiles; dir(varargin{didx})];
-    end
+    specfiles = rdir(fullfile(projectpath, 'spec', '**', ['*' varargin{1} '*_spec.m']));
   else
-    [current_dir, ~, ~] = fileparts(mfilename('fullpath'));
-    specfiles = dir([fullfile(current_dir, '..', '..', 'spec') '/*_spec.m']);
+    specfiles = rdir(fullfile(projectpath, 'spec', '**', ['*_spec.m']));
   end
 
   disp(['Running ' pluralise(numel(specfiles), 'specfile', 'specfiles')]);
 
   for fidx = 1:numel(specfiles)
     try
-      feval(specfiles(fidx).name(1:end-2));
+      [~, fname, ~] = fileparts(specfiles(fidx).name);
+      feval(fname);
     catch exception
       EXCEPTIONS = {EXCEPTIONS{:} exception};
       fprintf('E');
