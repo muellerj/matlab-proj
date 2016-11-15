@@ -21,6 +21,9 @@ function sig_out = benign_signal_builder(name, varargin)
     data_type = 'single';
   end
 
+  % Guess value
+  value = 0;
+
   sig_out = signal_builder('const', 'Value', value, 'DataType', data_type, 'Tmax', Tmax);
 
 end

@@ -54,9 +54,9 @@ Library {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "q284114"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Tue Nov 15 12:33:13 2016"
-  RTWModifiedTimeStamp	  382440300
-  ModelVersionFormat	  "1.%<AutoIncrement:53>"
+  LastModifiedDate	  "Tue Nov 15 12:55:52 2016"
+  RTWModifiedTimeStamp	  401115351
+  ModelVersionFormat	  "1.%<AutoIncrement:55>"
   ConfigurationManager	  "none"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -830,19 +830,19 @@ Library {
     ShowPageBoundaries	    off
     ZoomFactor		    "100"
     ReportName		    "simulink-default.rpt"
-    SIDHighWatermark	    "388"
+    SIDHighWatermark	    "389"
     Block {
       BlockType		      SubSystem
-      Name		      "Limiter"
+      Name		      "Sample"
       SID		      "1"
       Ports		      [1, 1]
-      Position		      [85, 51, 300, 229]
+      Position		      [85, 51, 305, 139]
       ZOrder		      -1
       LibraryVersion	      "1.70"
       RequestExecContextInheritance off
       Variant		      off
       System {
-	Name			"Limiter"
+	Name			"Sample"
 	Location		[607, 53, 1464, 774]
 	Open			off
 	ModelBrowserVisibility	off
