@@ -11,8 +11,12 @@ set -o vi
 shopt -qs extglob
 
 while read -ep ">> " command; do
-  history -s $command
-  echo "Wscript.Echo(CreateObject(\"Matlab.Application\").Execute(\"rehash;$command\"))" > matlabcmd.tmp.vbs
-  cscript //nologo matlabcmd.tmp.vbs
-  rm matlabcmd.tmp.vbs
+  if [ "${command}" != "exit" ]; then
+    history -s $command
+    echo "Wscript.Echo(CreateObject(\"Matlab.Application\").Execute(\"rehash;$command\"))" > matlabcmd.tmp.vbs
+    cscript //nologo matlabcmd.tmp.vbs
+    rm matlabcmd.tmp.vbs
+  else
+    break
+  fi
 done

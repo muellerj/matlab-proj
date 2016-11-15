@@ -1,5 +1,5 @@
-function s = inport_struct(time, signal)
+function s = inport_struct(simin, signal)
   s = struct();
-  s.time = time;
-  s.signals.values = signal;
+  s.time = simin.time;
+  s.signals.values = simin.(signal);
 end

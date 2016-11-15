@@ -1,23 +1,38 @@
 function run_specs(varargin)
 %RUN_SPECS [SEARCHSTR]
 %
-%  Run all available specs matching [projectpath]/spec/**/*SEARCHSTR*_spec.m
+%  Run all available specs matching
+%    [rootpath]/spec/**/*SEARCHSTR*_spec.m or
+%    [rootpath]/spec/*SEARCHSTR*/*_spec.m.
 
   global ASSERTIONS;
   ASSERTIONS = {};
   EXCEPTIONS = {};
 
   if nargin > 0
-    specfiles = rdir(fullfile(projectpath, 'spec', '**', ['*' varargin{1} '*_spec.m']));
+    specfiles = catstruct(...
+      rdir(fullfile(rootpath, 'spec', '**', ['*' varargin{1} '*_spec.m'])), ...
+      rdir(fullfile(rootpath, 'spec', ['*' varargin{1} '*'], '*_spec.m')));
   else
-    specfiles = rdir(fullfile(projectpath, 'spec', '**', ['*_spec.m']));
+    specfiles = rdir(fullfile(rootpath, 'spec', '**', ['*_spec.m']));
   end
+
+  specfiles = unique({specfiles.name});
 
   disp(['Running ' pluralise(numel(specfiles), 'specfile', 'specfiles')]);
 
+  % Close all testharness models
+  models = find_system('SearchDepth', 0);
+  for midx = 1:numel(models)
+    if starts_with(models{midx}, 'testharness_')
+      bdclose(models{midx});
+    end
+  end
+  warning('off','Simulink:blocks:AssumingDefaultSimStateForSFcn')
+
   for fidx = 1:numel(specfiles)
     try
-      [~, fname, ~] = fileparts(specfiles(fidx).name);
+      [~, fname, ~] = fileparts(specfiles{fidx});
       feval(fname);
     catch exception
       EXCEPTIONS = {EXCEPTIONS{:} exception};
@@ -28,14 +43,27 @@ function run_specs(varargin)
   fprintf('\n');
 
   if not(isempty(EXCEPTIONS))
-    for eidx = 1:numel(EXCEPTIONS), rethrow(EXCEPTIONS{eidx}); end
+    for eidx = 1:numel(EXCEPTIONS)
+      disp(EXCEPTIONS{eidx}.message);
+      for cidx = 1:numel(EXCEPTIONS{eidx}.cause)
+        disp(EXCEPTIONS{eidx}.cause{cidx});
+      end
+      for sidx = 1:numel(EXCEPTIONS{eidx}.stack)
+        fprintf('%s:%d\n' ,EXCEPTIONS{eidx}.stack(sidx).file, EXCEPTIONS{eidx}.stack(sidx).line);
+      end
+      disp(' ');
+    end
   end
 
   passes = cellfun(@(x) x.outcome, ASSERTIONS);
 
-  if all(passes)
+  if not(isempty(EXCEPTIONS))
+    fprintf([pluralise(numel(EXCEPTIONS), 'ERROR', 'ERRORS') '\n\n']);
+  end
+
+  if all(passes) && isempty(EXCEPTIONS)
     fprintf('PASSED\n\n')
-  else
+  elseif numel(find(passes == 0) > 0)
     fprintf([pluralise(numel(find(passes == 0)), 'FAIL', 'FAILS') '\n\n']);
 
     for aidx = 1:numel(ASSERTIONS)
@@ -43,6 +71,14 @@ function run_specs(varargin)
         fprintf('Failure in %s: line %d\n', ...
           ASSERTIONS{aidx}.stack.file, ASSERTIONS{aidx}.stack.line);
       end
+    end
+  end
+
+  % Close all testharness models
+  models = find_system('SearchDepth', 0);
+  for midx = 1:numel(models)
+    if starts_with(models{midx}, 'testharness_')
+      bdclose(models{midx});
     end
   end
 

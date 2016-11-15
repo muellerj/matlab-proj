@@ -1,12 +1,26 @@
-function sig_out = benign_signal_builder(name, Tmax)
-  if strcmp(name, 'St_asd_deact')
-    data_type = 'uint16';
-  elseif strcmp(name(1:2), 'B_')
-    data_type = 'uint16';
+function sig_out = benign_signal_builder(name, varargin)
+
+  if nargin < 2
+    Tmax = 2;
   else
-    data_type = 'double';
+    Tmax = varargin{1};
   end
 
-  sig_out = signal_builder('const', 'Value', 0, 'DataType', data_type, 'Tmax', Tmax);
+  % Determine data type
+  if starts_with(name, 'QU_') || ...
+     starts_with(name, 'ST_') || ...
+     starts_with(name, 'OPMO_') || ...
+     strcmp(name, 'CLT_0_ST') || ...
+     strcmp(name, 'St_asd_deact')
+    data_type = 'uint16';
+  elseif strcmp(name, 'St_asd_mode')
+    data_type = 'uint8';
+  elseif starts_with(name, 'B_')
+    data_type = 'boolean';
+  else
+    data_type = 'single';
+  end
+
+  sig_out = signal_builder('const', 'Value', value, 'DataType', data_type, 'Tmax', Tmax);
 
 end

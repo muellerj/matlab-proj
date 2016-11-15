@@ -19,61 +19,72 @@ function sigout = signal_builder(type, varargin)
 %   x0                Initial value for step fct          0
 %   xN                Final value for step fct            1
 %   Width             Width or rectangular pulse [s]      1
-%   DataType          Data type of the output             'double'
+%   DataType          Data type of the output             'single'
 %
 % The first key/value pair wins, all subsequent pairs are discarded!
 %
 % Author:
 %   Jonas Mueller, EA-252
 
-% Parse parameters
-if nargin > 1 && mod(nargin-1, 2) ~= 0
-  error('Wrong number of parameters');
-end
-
-% Set default options
-options           = struct();
-options.Ts        = 1e-3;
-options.Tmax      = 5;
-options.Tstep     = 1;
-options.Frequency = 3;
-options.Value     = 1;
-options.x0        = 0;
-options.xN        = 1;
-options.Width     = 1;
-options.DataType = 'double';
-
-% ... and let the user override them (go backwards to let first pair win)
-for vidx = numel(varargin)-1:-2:1
-  if any(strcmp(varargin{vidx}, fieldnames(options)))
-    eval(['options.' varargin{vidx} ' = varargin{' num2str(vidx+1) '};']);
-  else
-    error(['Invalid parameter: ' varargin{vidx}]);
+  % Parse parameters
+  if nargin > 1 && mod(nargin-1, 2) ~= 0
+    error('Wrong number of parameters');
   end
+
+  % Set default options
+  options           = struct();
+  options.Ts        = 1e-3;
+  options.Tmax      = 2;
+  options.Tstep     = 1;
+  options.Frequency = 3;
+  options.Value     = 1;
+  options.x0        = 0;
+  options.xN        = 1;
+  options.Width     = 1;
+  options.DataType = 'single';
+
+  % ... and let the user override them (go backwards to let first pair win)
+  for vidx = numel(varargin)-1:-2:1
+    if any(strcmp(varargin{vidx}, fieldnames(options)))
+      eval(['options.' varargin{vidx} ' = varargin{' num2str(vidx+1) '};']);
+    else
+      error(['Invalid parameter: ' varargin{vidx}]);
+    end
+  end
+
+  % Guard against never happening steps
+  options.Tmax = max(options.Tmax, options.Tstep + 0.1);
+
+  % Build time vector (row-vector)
+  time = (0:options.Ts:options.Tmax)';
+
+  switch(type)
+    case 'time'
+      sigout = time;
+    case 'const'
+      sigout = options.Value*ones(size(time));
+    case 'rand'
+      sigout = options.Value*(2*rand(size(time)) - 0.5);
+    case 'step'
+      sigout = options.xN*ones(size(time));
+      sigout(time < options.Tstep) = options.x0;
+    case 'rectpuls'
+      sigout = rectpuls(time - options.Tstep - options.Width/2, options.Width);
+    case 'pulse'
+      sigout = options.x0*ones(size(time));
+      sigout(time >= options.Tstep & time < options.Tstep + options.Width) = options.xN;
+    case 'sine'
+      sigout = options.Value*sin(time*2*pi*options.Frequency);
+    otherwise
+      error(['Unknown signal type: ' type]);
+  end
+
+  % Convert data type if required
+  if strcmp(type, 'time')
+    sigout = double(sigout);
+  else
+    sigout = feval(options.DataType, sigout);
+  end
+
 end
 
-% Build time vector (row-vector)
-time = (0:options.Ts:options.Tmax)';
-
-switch(type)
-  case 'time'
-    sigout = time;
-  case 'const'
-    sigout = options.Value*ones(size(time));
-  case 'step'
-    sigout = options.xN*ones(size(time));
-    sigout(time < options.Tstep) = options.x0;
-  case 'rectpuls'
-    sigout = double(rectpuls(time - options.Tstep - options.Width/2, options.Width));
-  case 'sine'
-    sigout = options.Value*sin(time*2*pi*options.Frequency);
-  otherwise
-    error(['Unknown signal type: ' type]);
-end
-
-% Convert data type if required
-if not(strcmp(options.DataType, 'double'))
-  sigout = feval(options.DataType, sigout);
-end
-
-end

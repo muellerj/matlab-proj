@@ -7,9 +7,9 @@ function make(option, varargin)
 %   make [option]
 
   % Add library paths
-  addpath(genpath([projectpath '/lib']));
-  addpath(genpath([projectpath '/spec']));
-  addpath(genpath([projectpath '/mdl']));
+  addpath(genpath([rootpath '/lib']));
+  addpath(genpath([rootpath '/spec']));
+  addpath(genpath([rootpath '/mdl']));
 
   if nargin < 1
     make('spec');
@@ -23,6 +23,6 @@ function make(option, varargin)
   end
 end
 
-function x = projectpath()
+function x = rootpath()
   x = char(regexp(mfilename('fullpath'), '(.*)[\\\/]make', 'tokens', 'once'));
 end

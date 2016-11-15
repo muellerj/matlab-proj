@@ -13,8 +13,15 @@ function value = fetch(hash, key)
 
   if isempty(idx)
     error(['Hash key ' key ' not found']);
+  elseif numel(idx) > 1
+    error(['Hash key ' key ' is not unique']);
   else
     value = hash{idx+1};
+
+    % Extract value if key is a BACE Parameter
+    if isa(value, 'BACE.Parameter')
+      value = value.Value;
+    end
   end
 
 end
