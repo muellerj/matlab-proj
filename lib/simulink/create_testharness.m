@@ -44,7 +44,7 @@ function [testharnessname, inputnames] = create_testharness(modelname, time)
       inputnames{pidx} = last(strsplit(inport_paths{pidx}, '/'));
 
       % Create block
-      from_workspace(pidx) = add_block('built-in/FromWorkspace', [testharnessname '/Inport' num2str(pidx)]);
+      from_workspace(pidx) = add_block('testharness_blocks/FromWorkspace', [testharnessname '/Inport' num2str(pidx)]);
       set_param(from_workspace(pidx), 'VariableName', ['inport_struct(simin, ''' inputnames{pidx} ''')']);
       set_param(from_workspace(pidx), 'SampleTime', num2str(mean(diff(time))));
       set_param(from_workspace(pidx), 'Interpolate', 'on');
@@ -54,7 +54,7 @@ function [testharnessname, inputnames] = create_testharness(modelname, time)
       resize_block(from_workspace(pidx), FROM_WORKSPACE_BLOCK_SIZE);
       move_block(from_workspace(pidx), get_param(inports(pidx),'Position') - FROM_WORKSPACE_BLOCK_OFFSET);
 
-      converter(pidx) = add_block('simulink/Signal Attributes/Data Type Conversion', [testharnessname '/Converter' num2str(pidx)]);
+      converter(pidx) = add_block('testharness_blocks/DataTypeConversion', [testharnessname '/Converter' num2str(pidx)]);
 
       % Resize and align converter block
       resize_block(converter(pidx), CONVERT_BLOCK_SIZE);
@@ -68,7 +68,7 @@ function [testharnessname, inputnames] = create_testharness(modelname, time)
     % Create corresponding to_workspace blocks
     for pidx = 1:numel(outports)
       % Create block
-      to_workspace(pidx) = add_block('built-in/ToWorkspace', [testharnessname '/Outport' num2str(pidx)]);
+      to_workspace(pidx) = add_block('testharness_blocks/ToWorkspace', [testharnessname '/Outport' num2str(pidx)]);
       set_param(to_workspace(pidx), 'VariableName', [last(strsplit(outport_paths{pidx}, '/')) '_simout']);
       set_param(to_workspace(pidx), 'MaxDataPoints', 'numel(simin.time)');
 
