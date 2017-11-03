@@ -1,34 +1,25 @@
 function run_specs(varargin)
 %RUN_SPECS [SEARCHSTR]
 %
-%  Run all available specs matching
-%    [rootpath]/spec/**/*SEARCHSTR*_spec.m or
-%    [rootpath]/spec/*SEARCHSTR*/*_spec.m.
+%  Run all available specs matching SEARCHSTR inside
+%  [rootpath]/spec/*
 
   global ASSERTIONS;
   ASSERTIONS = {};
   EXCEPTIONS = {};
 
   if nargin > 0
-    specfiles = catstruct(...
-      rdir(fullfile(rootpath, 'spec', '**', ['*' varargin{1} '*_spec.m'])), ...
-      rdir(fullfile(rootpath, 'spec', ['*' varargin{1} '*'], '*_spec.m')));
+    searchstr = varargin{1};
   else
-    specfiles = rdir(fullfile(rootpath, 'spec', '**', ['*_spec.m']));
+    searchstr = '.';
   end
 
-  specfiles = unique({specfiles.name});
+  specfiles = collectfiles({}, fullfile(rootpath, 'spec'));
+  specfiles = filterfiles(specfiles, searchstr);
 
-  disp(['Running ' pluralise(numel(specfiles), 'specfile', 'specfiles')]);
+  fprintf(['Running ' pluralise(numel(specfiles), 'specfile', 'specfiles') '\n']);
 
-  % Close all testharness models
-  models = find_system('SearchDepth', 0);
-  for midx = 1:numel(models)
-    if starts_with(models{midx}, 'testharness_')
-      bdclose(models{midx});
-    end
-  end
-  warning('off','Simulink:blocks:AssumingDefaultSimStateForSFcn')
+  close_testharness_models();
 
   for fidx = 1:numel(specfiles)
     try
@@ -45,9 +36,6 @@ function run_specs(varargin)
   if not(isempty(EXCEPTIONS))
     for eidx = 1:numel(EXCEPTIONS)
       disp(EXCEPTIONS{eidx}.message);
-      for cidx = 1:numel(EXCEPTIONS{eidx}.cause)
-        disp(EXCEPTIONS{eidx}.cause{cidx});
-      end
       for sidx = 1:numel(EXCEPTIONS{eidx}.stack)
         fprintf('%s:%d\n' ,EXCEPTIONS{eidx}.stack(sidx).file, EXCEPTIONS{eidx}.stack(sidx).line);
       end
@@ -58,12 +46,10 @@ function run_specs(varargin)
   passes = cellfun(@(x) x.outcome, ASSERTIONS);
 
   if not(isempty(EXCEPTIONS))
-    fprintf([pluralise(numel(EXCEPTIONS), 'ERROR', 'ERRORS') '\n\n']);
-  end
-
-  if all(passes) && isempty(EXCEPTIONS)
+    fprintf('ERROR\n\n')
+  elseif all(passes)
     fprintf('PASSED\n\n')
-  elseif numel(find(passes == 0) > 0)
+  else
     fprintf([pluralise(numel(find(passes == 0)), 'FAIL', 'FAILS') '\n\n']);
 
     for aidx = 1:numel(ASSERTIONS)
@@ -74,13 +60,7 @@ function run_specs(varargin)
     end
   end
 
-  % Close all testharness models
-  models = find_system('SearchDepth', 0);
-  for midx = 1:numel(models)
-    if starts_with(models{midx}, 'testharness_')
-      bdclose(models{midx});
-    end
-  end
+  close_testharness_models();
 
 end
 
@@ -90,4 +70,45 @@ function outstr = pluralise(n, singular, plural)
   else
     outstr = [num2str(n) ' ' plural];
   end
+end
+
+function newfiles = collectfiles(oldfiles, folder)
+  newfiles = oldfiles;
+  files = dir(folder);
+  for fidx = 3:numel(files)
+    if isdir(fullfile(folder, files(fidx).name))
+      newfiles = collectfiles(newfiles, fullfile(folder, files(fidx).name));
+    else
+      if regexp(files(fidx).name, '_spec.m$')
+        newfiles{end+1} = fullfile(folder, files(fidx).name);
+      end
+    end
+  end
+end
+
+function newfiles = filterfiles(oldfiles, searchstr)
+  searchstr = regexprep(searchstr, '\\', '/');
+  newfiles = {};
+  ignore   = fullfile(rootpath);
+  for fidx = 1:numel(oldfiles)
+    specname = strrep(oldfiles{fidx}, ignore, '');
+    specname = regexprep(specname, '\\', '/');
+    if regexp(specname, ['\<' searchstr '(\>|_spec.m)'])
+      newfiles{end+1} = oldfiles{fidx};
+    end
+  end
+end
+
+function close_testharness_models
+  models = find_system('SearchDepth', 0);
+  for midx = 1:numel(models)
+    if starts_with(models{midx}, 'testharness_')
+      bdclose(models{midx});
+    end
+  end
+  warning('off','Simulink:blocks:AssumingDefaultSimStateForSFcn')
+end
+
+function cond = starts_with(str, pat)
+  cond = strcmp(str(1:min(length(pat), length(str))), pat);
 end
